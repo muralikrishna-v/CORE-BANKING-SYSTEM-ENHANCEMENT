@@ -1,0 +1,38 @@
+# python code # Generate a smaller synthetic dataset with 10,000 transactions including dollar currency
+def generate_transaction_data_with_currency(num_records=10000):
+    np.random.seed(42)  # For reproducibility
+
+    customer_ids = [str(uuid.uuid4()) for _ in range(1000)]  # 1,000 unique customers
+    transaction_ids = [str(uuid.uuid4()) for _ in range(num_records)]
+    transaction_types = np.random.choice(['credit', 'debit'], num_records)
+    transaction_amounts = np.random.randint(1, 10000, num_records)  # Amounts between 1 and 10,000
+    transaction_dates = [
+        datetime.now() - timedelta(days=np.random.randint(0, 365)) for _ in range(num_records)
+    ]
+    customer_ids_for_transactions = np.random.choice(customer_ids, num_records)
+    currencies = ["USD"] * num_records  # All transactions in USD
+
+    transactions = pd.DataFrame({
+        "TransactionID": transaction_ids,
+        "CustomerID": customer_ids_for_transactions,
+        "TransactionType": transaction_types,
+        "Amount": transaction_amounts,
+        "Currency": currencies,
+        "TransactionDate": transaction_dates
+    })
+
+    return transactions
+
+# Generate the datasets
+small_transaction_data = generate_transaction_data_with_currency(10000)
+small_customer_profiles = generate_customer_profiles(small_transaction_data["CustomerID"].unique())
+
+# Save to CSV for PSL script input
+small_transaction_data.to_csv("/mnt/data/small_transaction_data_with_currency.csv", index=False)
+small_customer_profiles.to_csv("/mnt/data/small_customer_profiles.csv", index=False)
+
+# File paths for reference
+small_transaction_data_path = "/mnt/data/small_transaction_data_with_currency.csv"
+small_customer_profiles_path = "/mnt/data/small_customer_profiles.csv"
+
+small_transaction_data_path, small_customer_profiles_path
