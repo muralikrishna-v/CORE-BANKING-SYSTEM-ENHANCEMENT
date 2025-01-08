@@ -1,0 +1,95 @@
+// PSL Script for Core Banking System Enhancement
+// This script processes transactions and updates customer profiles
+
+onTransactionProcess {
+
+    // Load transaction data from CSV
+    var transactions = loadCSV("/path/to/small_transaction_data_with_currency.csv");
+    var profiles = loadProfiles("/path/to/small_customer_profiles.csv");
+
+    // Initialize counters for logging
+    var processedCount = 0;
+    var errorCount = 0;
+
+    // Process each transaction
+    for transaction in transactions {
+        try {
+            // Fetch customer profile
+            var customerID = transaction["CustomerID"];
+            var profile = findProfile(profiles, customerID);
+
+            if (profile != null) {
+                // Update account balance based on transaction type
+                if (transaction["TransactionType"] == "credit") {
+                    profile["AccountBalance"] += transaction["Amount"];
+                } else if (transaction["TransactionType"] == "debit") {
+                    profile["AccountBalance"] -= transaction["Amount"];
+                }
+
+                // Update last transaction date
+                profile["LastTransactionDate"] = transaction["TransactionDate"];
+
+                // Save updated profile back to dataset
+                saveProfile(profiles, profile);
+                processedCount++;
+
+            } else {
+                log("Customer profile not found for Transaction ID: " + transaction["TransactionID"]);
+                errorCount++;
+            }
+        } catch (e) {
+            log("Error processing Transaction ID: " + transaction["TransactionID"] + ". Error: " + e);
+            errorCount++;
+        }
+    }
+
+    // Final log summary
+    log("Transaction processing complete. Processed: " + processedCount + ", Errors: " + errorCount);
+
+}
+
+// Load transactions from CSV file
+function loadCSV(filePath) {
+    var file = openFile(filePath);
+    var data = [];
+    while (!file.eof()) {
+        data.push(file.readLine().split(","));
+    }
+    file.close();
+    return data;
+}
+
+// Load customer profiles from CSV file
+function loadProfiles(filePath) {
+    var profiles = {};
+    var file = openFile(filePath);
+    while (!file.eof()) {
+        var line = file.readLine().split(",");
+        profiles[line[0]] = {
+            "CustomerID": line[0],
+            "AccountBalance": parseFloat(line[1]),
+            "LastTransactionDate": line[2]
+        };
+    }
+    file.close();
+    return profiles;
+}
+
+// Find a profile by CustomerID
+function findProfile(profiles, customerID) {
+    return profiles[customerID] || null;
+}
+
+// Save updated profile back to the profiles dataset
+function saveProfile(profiles, profile) {
+    profiles[profile["CustomerID"]] = profile;
+}
+
+// Log messages to a file
+function log(message) {
+    var logFile = openFile("transaction_logs.txt", "a");
+    logFile.write(message + "\n");
+    logFile.close();
+} 
+
+
